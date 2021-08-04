@@ -1,33 +1,3 @@
-.App {
-  text-align: center;
-}
-
-.divPrincipal {
-  display: flex;
-  justify-content: center;
-}
-
-.tabelas {
-  display: flex;
-  justify-content: center;
-}
-
-.tabelas .pTempoReal{
-  width: 300px;
-  margin-right: 200px;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -39,15 +9,84 @@
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.divPrincipal {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  background-color: #282c34;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.processList {
+  background-color: white;
+  font-size: 0.8rem;
+  text-align: center;
+  margin: 10px;
+  border: 1px solid black;
+  border-radius: 8px;
+}
+
+.divMomento {
+  background-color: white;
+  font-size: 1rem;
+  text-align: center;
+  margin: 10px;
+  margin-bottom: 0;
+  border: 1px solid black;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-content: center;
+  padding: 10px;
+  line-height: 0;
+}
+
+.divMomento button {
+  width: 200px;
+  height: 42px;
+  margin: 0;
+  margin-left: 30px;
+  font-size: 14px;
+}
+
+.divMomento h3 {
+  margin: 0;
+}
+
+.filas {
+  background-color: white;
+  font-size: 0.7rem;
+  text-align: center;
+  margin: 10px;
+  border: 1px solid black;
+  border-radius: 8px;
+  display: flex;
+  flex-flow: row wrap;
+  align-content: center;
+  justify-content: space-around;
+  padding: 10px;
+}
+
+.tabelas {
+  width: 300px;
+  margin-right: 200px;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  border: 1px solid black;
+  border-radius: 8px;
+  margin: 10px;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+.App {
+  text-align: center;
 }

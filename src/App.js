@@ -41,6 +41,8 @@ function App() {
           mbytes: newData[3],
           disco: newData[4],
           tempoDeQuantumGasto: 0,
+          tempoNaFilaBloqueado: 0,
+          descontadoTempoDisco: false,
         })
 
       }

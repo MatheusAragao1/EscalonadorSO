@@ -16,6 +16,10 @@
   background-color: #282c34;
 }
 
+.letraLaranja {
+  color: orangered;
+}
+
 .processList {
   background-color: white;
   font-size: 0.8rem;

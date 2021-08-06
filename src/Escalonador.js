@@ -17,6 +17,8 @@ let historicoFilaFeedback2 = [];
 let historicoFilaFeedback3 = [];
 let historicoCPU = [];
 
+let historicoProcessos = [];
+
 function ModalHistorico(props) {
   return (
     <Modal
@@ -29,65 +31,11 @@ function ModalHistorico(props) {
         <Modal.Title id="contained-modal-title-vcenter">Histórico</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <h4>Histórico PTempoReal</h4>
-        {historicoPTempoReal.map((data, index) => {
-          return (
-            <p>
-              Momento: {data.momento}
-              <br /> Fila: {JSON.stringify(data.fila)}
-              <br />
-              <br />
-            </p>
-          );
-        })}
-        <br />
-        <h4>Histórico Feedback1</h4>
-        {historicoFilaFeedback1.map((data, index) => {
-          return (
-            <p>
-              Momento: {data.momento}
-              <br /> Fila: {JSON.stringify(data.fila)}
-              <br />
-              <br />
-            </p>
-          );
-        })}
-        <br />
-        <h4>Histórico Feedback2</h4>
-        {historicoFilaFeedback2.map((data, index) => {
-          return (
-            <p>
-              Momento: {data.momento}
-              <br /> Fila: {JSON.stringify(data.fila)}
-              <br />
-              <br />
-            </p>
-          );
-        })}
-        <br />
-        <h4>Histórico Feedback3</h4>
-        {historicoFilaFeedback3.map((data, index) => {
-          return (
-            <p>
-              Momento: {data.momento}
-              <br /> Fila: {JSON.stringify(data.fila)}
-              <br />
-              <br />
-            </p>
-          );
-        })}
-        <br />
-        <h4>Histórico CPU</h4>
-        {historicoCPU.map((data, index) => {
-          return (
-            <p>
-              Momento: {data.momento}
-              <br /> Fila: {JSON.stringify(data.fila)}
-              <br />
-              <br />
-            </p>
-          );
-        })}
+        <h4>Histórico</h4>
+          <h1>Processo: {props.processId}</h1>
+          {historicoProcessos.filter(x => x.processId == props.processId).length > 0 ? historicoProcessos.filter(x => x.processId == props.processId)[0].historico.map((data, index) => {
+            return <h2>{data}</h2>
+          }) : null}
         <br />
       </Modal.Body>
       <Modal.Footer>
@@ -105,6 +53,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
   const [filaFeedback2, setFilaFeedback2] = useState([]);
   const [filaFeedback3, setFilaFeedback3] = useState([]);
   const [filaBloqueados, setFilaBloqueados] = useState([]);
+  const [selecteId, setSelectedId] = useState(0);
   const [cpus, setCpus] = useState([{ processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, }, { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, }, { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, }, { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaBloqueado: 0 }]);
 
   const schedule = () => {
@@ -115,8 +64,14 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     listOfProcess.forEach((process) => {
       if (process.arrivalTime == count && process.priority == 0) {
         PtempoRealGlobal.push(process)
+        if(historicoProcessos.filter(e => e.processId == process.processId).length == 0){
+          historicoProcessos.push({processId: process.processId, historico: []})
+        }
       } else if (process.arrivalTime == count && process.priority == 1) {
         filaFeedback1Global.push(process)
+        if(historicoProcessos.filter(e => e.processId == process.processId).length == 0){
+          historicoProcessos.push({processId: process.processId, historico: []})
+        }
       }
     })
 
@@ -150,6 +105,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     //Verificar fila Bloqueados e colocar em disco quem precisa de disco
     VerificarBloqueadosEColocarEmDisco()
 
+    //Registra o historico dos processos
+    RegistrarHistorico()
+
 
 
     setPTempoReal(PtempoRealGlobal)
@@ -159,13 +117,52 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     setFilaBloqueados(filaBloqueadosGlobal)
     setCpus(filaCPUGlobal)
 
-    historicoCPU.push({ momento: count, fila: filaCPUGlobal })
-    historicoFilaFeedback1.push({ momento: count, fila: filaFeedback1Global })
-    historicoFilaFeedback2.push({ momento: count, fila: filaFeedback2Global })
-    historicoFilaFeedback3.push({ momento: count, fila: filaFeedback3Global })
-    historicoPTempoReal.push({ momento: count, fila: PtempoRealGlobal })
-
   }, [count])
+
+  function RegistrarHistorico(){
+    for(let i = 0; i < PtempoRealGlobal.length; i++){
+      for(let j = 0; j < historicoProcessos.length; j++){        
+        if(historicoProcessos[j].processId == PtempoRealGlobal[i].processId){
+          historicoProcessos[j].historico.push('Fila de tempo real')
+        }
+      }
+    }
+    for(let i = 0; i < filaFeedback1Global.length; i++){
+      for(let j = 0; j < historicoProcessos.length; j++){
+        if(historicoProcessos[j].processId == filaFeedback1Global[i].processId){
+          historicoProcessos[j].historico.push('Feedback 1')
+        }
+      }
+    }
+    for(let i = 0; i < filaFeedback2Global.length; i++){
+      for(let j = 0; j < historicoProcessos.length; j++){
+        if(historicoProcessos[j].processId == filaFeedback2Global[i].processId){
+          historicoProcessos[j].historico.push('Feedback 2')
+        }
+      }
+    }
+    for(let i = 0; i < filaFeedback3Global.length; i++){
+      for(let j = 0; j < historicoProcessos.length; j++){
+        if(historicoProcessos[j].processId == filaFeedback3Global[i].processId){
+          historicoProcessos[j].historico.push('Feedback 3')
+        }
+      }
+    }
+    for(let i = 0; i < filaBloqueadosGlobal.length; i++){
+      for(let j = 0; j < historicoProcessos.length; j++){
+        if(historicoProcessos[j].processId == filaBloqueadosGlobal[i].processId){
+          historicoProcessos[j].historico.push('Bloqueados')
+        }
+      }
+    }
+    for(let i = 0; i < filaCPUGlobal.length; i++){
+      for(let j = 0; j < historicoProcessos.length; j++){
+        if(historicoProcessos[j].processId == filaCPUGlobal[i].processId){
+          historicoProcessos[j].historico.push('CPU')
+        }
+      }
+    }
+  }
 
   function VerificarBloqueadosEColocarEmDisco() {
     let toRemoveFromBloqueados = []
@@ -430,11 +427,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           <Button onClick={schedule}>Avançar tempo</Button>
           <br />
           <br />
-          <Button variant="primary" onClick={() => setModalShow(true)}>
+          {/* <Button variant="primary" onClick={() => setModalShow(true)}>
             Verificar historico das filas
-          </Button>
+          </Button> */}
         </div>
-        <ModalHistorico show={modalShow} onHide={() => setModalShow(false)} />
+        <ModalHistorico processId={selecteId} show={modalShow} onHide={() => setModalShow(false)} />
       </div>
       <div className="filas">
         <div className="tabelas suspenso">
@@ -458,7 +455,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             <tbody>
               <tr>
                 {PTempoReal.map((data, index) => {
-                  return <td key={index}>{data.processId}</td>;
+                  return <td key={index}><a onClick={() => {setSelectedId(data.processId); setModalShow(true)}}>{data.processId}</a></td>;
                 })}
               </tr>
             </tbody>
@@ -477,12 +474,12 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
               <tr>
                 {cpus.map((data, index) => {
                   return (
-                    <td key={index}>
+                    <td key={index}><a onClick={() => {setSelectedId(data.processId); setModalShow(true)}}>
                       {data != undefined
                         ? data.processId == -1
                           ? "Vazio"
                           : data.processId
-                        : "Vazio"}
+                        : "Vazio"}</a>
                     </td>
                   );
                 })}
@@ -511,7 +508,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             <tbody>
               <tr>
                 {filaFeedback1.map((data) => {
-                  return <td>{data.processId}</td>;
+                  return <td><a onClick={() => {setSelectedId(data.processId); setModalShow(true)}}>{data.processId}</a></td>;
                 })}
               </tr>
             </tbody>
@@ -519,7 +516,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             <tbody>
               <tr>
                 {filaFeedback2.map((data, index) => {
-                  return <td key={index}>{data.processId}</td>;
+                  return <td key={index}><a onClick={() => {setSelectedId(data.processId); setModalShow(true)}}>{data.processId}</a></td>;
                 })}
               </tr>
             </tbody>
@@ -527,7 +524,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             <tbody>
               <tr>
                 {filaFeedback3.map((data, index) => {
-                  return <td key={index}>{data.processId}</td>;
+                  return <td key={index}><a onClick={() => {setSelectedId(data.processId); setModalShow(true)}}>{data.processId}</a></td>;
                 })}
               </tr>
             </tbody>
@@ -542,9 +539,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
               <tr>
                 <tr>
                   {filaBloqueados.map((data, index) => {
-                    return <td key={index}>{data.processId}</td>
+                    return <td className={data.descontadoTempoDisco ? 'letraLaranja' : ''} key={index}><a onClick={() => {setSelectedId(data.processId); setModalShow(true)}}>{data.processId}</a></td>
                   })}
                 </tr>
+                <p>OBS: Processos em Laranja estão usando disco</p>
               </tr>
             </tbody>
           </Table>

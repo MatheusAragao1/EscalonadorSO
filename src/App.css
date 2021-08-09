@@ -94,3 +94,7 @@
 .App {
   text-align: center;
 }
+
+.filaBackground {
+  border: 1px solid darkblue;
+}

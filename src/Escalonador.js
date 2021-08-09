@@ -44,10 +44,10 @@ function ModalHistorico(props) {
         {historicoProcessos.filter((x) => x.processId == props.processId)
           .length > 0
           ? historicoProcessos
-              .filter((x) => x.processId == props.processId)[0]
-              .historico.map((data, index) => {
-                return <h2>{data}</h2>;
-              })
+            .filter((x) => x.processId == props.processId)[0]
+            .historico.map((data, index) => {
+              return <h2>{data}</h2>;
+            })
           : null}
         <br />
       </Modal.Body>
@@ -67,6 +67,8 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
   const [filaFeedback3, setFilaFeedback3] = useState([]);
   const [filaBloqueados, setFilaBloqueados] = useState([]);
   const [selecteId, setSelectedId] = useState(0);
+  const [filaBloqueadoSuspenso, setFilaBloqueadoSuspenso] = useState([]);
+  const [filaProntoSuspenso, setFilaProntoSuspenso] = useState([]);
   const [cpus, setCpus] = useState([
     { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
     { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
@@ -155,6 +157,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     //Passa o processo para a fila de prontos de acordo com a prioridade, se tiver espaço suficiente
     PassarProcessoParaFilaDePronto();
 
+    //Passar os processos que estao em bloqueado suspenso e receberam disco para pronto suspenso
+    PassarBloqueadoSuspensoParaProntoSuspenso();
+
     //Registra o historico dos processos
     RegistrarHistorico();
 
@@ -163,25 +168,69 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     setFilaFeedback2(filaFeedback2Global);
     setFilaFeedback3(filaFeedback3Global);
     setFilaBloqueados(filaBloqueadosGlobal);
+    setFilaBloqueadoSuspenso(filaBloqueadosSuspensoGlobal);
+    setFilaProntoSuspenso(filaProntoSuspensoGlobal);
     setCpus(filaCPUGlobal);
   }, [count]);
 
   function PassarProcessoParaFilaDePronto() {
+    let paraRetirarProntoSuspenso = []
     for (let i = 0; i < filaProntoSuspensoGlobal.length; i++) {
       if (
-        tamanhoDiscoVariavel + filaProntoSuspensoGlobal[i].mbytes <=
+        tamanhoDiscoVariavel + parseInt(filaProntoSuspensoGlobal[i].mbytes) <=
         tamanhoDiscoLimite
       ) {
         if (filaProntoSuspensoGlobal[i].priority === 1) {
           filaFeedback1Global.push(filaProntoSuspensoGlobal[i]);
+          paraRetirarProntoSuspenso.push(filaProntoSuspensoGlobal[i])
+          tamanhoDiscoVariavel = tamanhoDiscoVariavel + parseInt(filaProntoSuspensoGlobal[i].mbytes);
         } else if (filaProntoSuspensoGlobal[i].priority === 2) {
           filaFeedback2Global.push(filaProntoSuspensoGlobal[i]);
+          paraRetirarProntoSuspenso.push(filaProntoSuspensoGlobal[i])
+          tamanhoDiscoVariavel = tamanhoDiscoVariavel + parseInt(filaProntoSuspensoGlobal[i].mbytes);
         } else {
           filaFeedback3Global.push(filaProntoSuspensoGlobal[i]);
+          paraRetirarProntoSuspenso.push(filaProntoSuspensoGlobal[i])
+          tamanhoDiscoVariavel = tamanhoDiscoVariavel + parseInt(filaProntoSuspensoGlobal[i].mbytes);
         }
-      } else {
-        break;
       }
+    }
+    for (let i = 0; i < paraRetirarProntoSuspenso.length; i++) {
+      filaProntoSuspensoGlobal = filaProntoSuspensoGlobal.filter(x => x != paraRetirarProntoSuspenso[i]);
+    }
+  }
+
+  function PassarBloqueadoSuspensoParaProntoSuspenso() {
+    console.log(count + ' - ' + filaBloqueadosGlobal.length + ' - ' + discosGlobal)
+    if (filaBloqueadosGlobal.length == 0) {
+      let toRemoveFromBloqueadosSuspenso = [];
+      for (var i = 0; i < filaBloqueadosSuspensoGlobal.length; i++) {
+        if (filaBloqueadosSuspensoGlobal[i].descontadoTempoDisco) {
+          filaBloqueadosSuspensoGlobal[i].tempoNaFilaBloqueado++;
+
+          if (filaBloqueadosSuspensoGlobal[i].tempoNaFilaBloqueado == 2) {
+            discosGlobal =
+              parseInt(discosGlobal) + parseInt(filaBloqueadosSuspensoGlobal[i].disco);
+            filaBloqueadosSuspensoGlobal[i].disco = 0;
+            toRemoveFromBloqueadosSuspenso.push(filaBloqueadosSuspensoGlobal[i]);
+            filaProntoSuspensoGlobal.push(filaBloqueadosSuspensoGlobal[i])
+
+          }
+        }
+        if (
+          parseInt(discosGlobal) - parseInt(filaBloqueadosSuspensoGlobal[i].disco) >= 0 &&
+          !filaBloqueadosSuspensoGlobal[i].descontadoTempoDisco
+        ) {
+          discosGlobal =
+            parseInt(discosGlobal) - parseInt(filaBloqueadosSuspensoGlobal[i].disco);
+          filaBloqueadosSuspensoGlobal[i].descontadoTempoDisco = true;
+        }
+      }
+
+      //remove os processos da fila de feedback1 q foram inseridos na cpu
+      filaBloqueadosSuspensoGlobal = filaBloqueadosSuspensoGlobal.filter(
+        (item) => !toRemoveFromBloqueadosSuspenso.includes(item)
+      );
     }
   }
 
@@ -201,11 +250,14 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         }
       }
     }
-
     if (conseguiAlocar) {
       tamanhoDiscoVariavel -= parseInt(process.mbytes);
       PtempoRealGlobal.push(process);
       for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
         filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
@@ -215,6 +267,8 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       }
       return;
     } else {
+      bloqueadosParaBloqueadosSuspenso = filaBloqueadosGlobal;
+      paraRetirarDaFilaDeBloqueados = filaBloqueadosGlobal;
       tentarAlocarProcessoPrioridade0EmFeedback3(
         process,
         somaProcessos,
@@ -231,7 +285,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     paraRetirarDaFilaDeBloqueados
   ) {
     let conseguiAlocar = false;
-    let feedback3ParaBloqueadosSuspenso = [];
+    let feedback3ParaProntoSuspenso = [];
     let paraRetirarDaFilaDeFeedback3 = [];
 
     for (let i = filaFeedback3Global.length - 1; i >= 0; i--) {
@@ -240,7 +294,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         conseguiAlocar = true;
         for (let j = i; j < filaFeedback3Global.length; j++) {
           tamanhoDiscoVariavel += parseInt(filaFeedback3Global[j].mbytes);
-          feedback3ParaBloqueadosSuspenso.push(filaFeedback3Global[j]);
+          feedback3ParaProntoSuspenso.push(filaFeedback3Global[j]);
           paraRetirarDaFilaDeFeedback3.push(filaFeedback3Global[j]);
         }
       }
@@ -249,8 +303,8 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     if (conseguiAlocar) {
       tamanhoDiscoVariavel -= parseInt(process.mbytes);
       PtempoRealGlobal.push(process);
-      for (let i = 0; i < feedback3ParaBloqueadosSuspenso.length; i++) {
-        filaBloqueadosSuspensoGlobal.push(feedback3ParaBloqueadosSuspenso[i]);
+      for (let i = 0; i < feedback3ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback3ParaProntoSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeFeedback3.length; i++) {
         filaFeedback3Global = filaFeedback3Global.filter(
@@ -258,6 +312,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         );
       }
       for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
         filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
@@ -266,12 +324,14 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         );
       }
     } else {
+      feedback3ParaProntoSuspenso = filaFeedback3Global
+      paraRetirarDaFilaDeFeedback3 = filaFeedback3Global
       tentarAlocarProcessoPrioridade0EmFeedback2(
         process,
         somaProcessos,
         bloqueadosParaBloqueadosSuspenso,
         paraRetirarDaFilaDeBloqueados,
-        feedback3ParaBloqueadosSuspenso,
+        feedback3ParaProntoSuspenso,
         paraRetirarDaFilaDeFeedback3
       );
     }
@@ -282,11 +342,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     somaProcessos,
     bloqueadosParaBloqueadosSuspenso,
     paraRetirarDaFilaDeBloqueados,
-    feedback3ParaBloqueadosSuspenso,
+    feedback3ParaProntoSuspenso,
     paraRetirarDaFilaDeFeedback3
   ) {
     let conseguiAlocar = false;
-    let feedback2ParaBloqueadosSuspenso = [];
+    let feedback2ParaProntoSuspenso = [];
     let paraRetirarDaFilaDeFeedback2 = [];
 
     for (let i = filaFeedback2Global.length - 1; i >= 0; i--) {
@@ -295,7 +355,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         conseguiAlocar = true;
         for (let j = i; j < filaFeedback2Global.length; j++) {
           tamanhoDiscoVariavel += parseInt(filaFeedback2Global[j].mbytes);
-          feedback2ParaBloqueadosSuspenso.push(filaFeedback2Global[j]);
+          feedback2ParaProntoSuspenso.push(filaFeedback2Global[j]);
           paraRetirarDaFilaDeFeedback2.push(filaFeedback2Global[j]);
         }
       }
@@ -304,16 +364,16 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     if (conseguiAlocar) {
       tamanhoDiscoVariavel -= parseInt(process.mbytes);
       PtempoRealGlobal.push(process);
-      for (let i = 0; i < feedback2ParaBloqueadosSuspenso.length; i++) {
-        filaBloqueadosSuspensoGlobal.push(feedback2ParaBloqueadosSuspenso[i]);
+      for (let i = 0; i < feedback2ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback2ParaProntoSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeFeedback2.length; i++) {
         filaFeedback2Global = filaFeedback2Global.filter(
           (x) => x != paraRetirarDaFilaDeFeedback2[i]
         );
       }
-      for (let i = 0; i < feedback3ParaBloqueadosSuspenso.length; i++) {
-        filaBloqueadosSuspensoGlobal.push(feedback3ParaBloqueadosSuspenso[i]);
+      for (let i = 0; i < feedback3ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback3ParaProntoSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeFeedback3.length; i++) {
         filaFeedback3Global = filaFeedback3Global.filter(
@@ -321,6 +381,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         );
       }
       for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
         filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
@@ -329,14 +393,16 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         );
       }
     } else {
+      feedback2ParaProntoSuspenso = filaFeedback2Global
+      paraRetirarDaFilaDeFeedback2 = filaFeedback2Global
       tentarAlocarProcessoPrioridade0EmFeedback1(
         process,
         somaProcessos,
         bloqueadosParaBloqueadosSuspenso,
         paraRetirarDaFilaDeBloqueados,
-        feedback3ParaBloqueadosSuspenso,
+        feedback3ParaProntoSuspenso,
         paraRetirarDaFilaDeFeedback3,
-        feedback2ParaBloqueadosSuspenso,
+        feedback2ParaProntoSuspenso,
         paraRetirarDaFilaDeFeedback2
       );
     }
@@ -346,9 +412,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     somaProcessos,
     bloqueadosParaBloqueadosSuspenso,
     paraRetirarDaFilaDeBloqueados,
-    feedback3ParaBloqueadosSuspenso,
+    feedback3ParaProntoSuspenso,
     paraRetirarDaFilaDeFeedback3,
-    feedback2ParaBloqueadosSuspenso,
+    feedback2ParaProntoSuspenso,
     paraRetirarDaFilaDeFeedback2
   ) {
     let conseguiAlocar = false;
@@ -371,23 +437,23 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       tamanhoDiscoVariavel -= parseInt(process.mbytes);
       PtempoRealGlobal.push(process);
       for (let i = 0; i < feedback1ParaBloqueadosSuspenso.length; i++) {
-        filaBloqueadosSuspensoGlobal.push(feedback1ParaBloqueadosSuspenso[i]);
+        filaProntoSuspensoGlobal.push(feedback1ParaBloqueadosSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeFeedback1.length; i++) {
         filaFeedback1Global = filaFeedback1Global.filter(
           (x) => x != paraRetirarDaFilaDeFeedback1[i]
         );
       }
-      for (let i = 0; i < feedback2ParaBloqueadosSuspenso.length; i++) {
-        filaBloqueadosSuspensoGlobal.push(feedback2ParaBloqueadosSuspenso[i]);
+      for (let i = 0; i < feedback2ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback2ParaProntoSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeFeedback2.length; i++) {
         filaFeedback2Global = filaFeedback2Global.filter(
           (x) => x != paraRetirarDaFilaDeFeedback2[i]
         );
       }
-      for (let i = 0; i < feedback3ParaBloqueadosSuspenso.length; i++) {
-        filaBloqueadosSuspensoGlobal.push(feedback3ParaBloqueadosSuspenso[i]);
+      for (let i = 0; i < feedback3ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback3ParaProntoSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeFeedback3.length; i++) {
         filaFeedback3Global = filaFeedback3Global.filter(
@@ -395,6 +461,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         );
       }
       for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
         filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
       }
       for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
@@ -407,7 +477,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     }
   }
 
-  function TentarAlocarProcessoPriodade1() {}
+  function TentarAlocarProcessoPriodade1() { }
 
   function RegistrarHistorico() {
     for (let i = 0; i < PtempoRealGlobal.length; i++) {
@@ -457,6 +527,22 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       for (let j = 0; j < historicoProcessos.length; j++) {
         if (historicoProcessos[j].processId == filaCPUGlobal[i].processId) {
           historicoProcessos[j].historico.push("CPU");
+        }
+      }
+    }
+
+    for (let i = 0; i < filaBloqueadosSuspensoGlobal.length; i++) {
+      for (let j = 0; j < historicoProcessos.length; j++) {
+        if (historicoProcessos[j].processId == filaBloqueadosSuspensoGlobal[i].processId) {
+          historicoProcessos[j].historico.push("Bloqueado Suspenso");
+        }
+      }
+    }
+
+    for (let i = 0; i < filaProntoSuspensoGlobal.length; i++) {
+      for (let j = 0; j < historicoProcessos.length; j++) {
+        if (historicoProcessos[j].processId == filaProntoSuspensoGlobal[i].processId) {
+          historicoProcessos[j].historico.push("Pronto Suspenso");
         }
       }
     }
@@ -528,10 +614,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       ) {
         if (
           filaCPUGlobal[i].processId ==
-            processosNaCPUOrdenadosPorPrioridade[0].processId &&
+          processosNaCPUOrdenadosPorPrioridade[0].processId &&
           filaFeedback1Global[i] !== undefined &&
           filaFeedback1Global[i].priority <
-            processosNaCPUOrdenadosPorPrioridade[0].priority
+          processosNaCPUOrdenadosPorPrioridade[0].priority
         ) {
           if (processosNaCPUOrdenadosPorPrioridade[0].priority == 1) {
             filaFeedback1Global.push(processosNaCPUOrdenadosPorPrioridade[0]);
@@ -578,10 +664,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       ) {
         if (
           filaCPUGlobal[i].processId ==
-            processosNaCPUOrdenadosPorPrioridade[0].processId &&
+          processosNaCPUOrdenadosPorPrioridade[0].processId &&
           filaFeedback2Global[i] !== undefined &&
           filaFeedback2Global[i].priority <
-            processosNaCPUOrdenadosPorPrioridade[0].priority
+          processosNaCPUOrdenadosPorPrioridade[0].priority
         ) {
           if (processosNaCPUOrdenadosPorPrioridade[0].priority == 1) {
             filaFeedback1Global.push(processosNaCPUOrdenadosPorPrioridade[0]);
@@ -629,10 +715,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       ) {
         if (
           filaCPUGlobal[i].processId ==
-            processosNaCPUOrdenadosPorPrioridade[0].processId &&
+          processosNaCPUOrdenadosPorPrioridade[0].processId &&
           filaFeedback3Global[i] !== undefined &&
           filaFeedback3Global[i].priority <
-            processosNaCPUOrdenadosPorPrioridade[0].priority
+          processosNaCPUOrdenadosPorPrioridade[0].priority
         ) {
           if (processosNaCPUOrdenadosPorPrioridade[0].priority == 1) {
             filaFeedback1Global.push(processosNaCPUOrdenadosPorPrioridade[0]);
@@ -801,7 +887,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       ) {
         if (
           filaCPUGlobal[i].processId ==
-            processosNaCPUOrdenadosPorPrioridade[0].processId &&
+          processosNaCPUOrdenadosPorPrioridade[0].processId &&
           processosNaCPUOrdenadosPorPrioridade[0].priority !== 0
         ) {
           if (processosNaCPUOrdenadosPorPrioridade[0].priority == 1) {
@@ -871,12 +957,24 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           <Table striped bordered hover size="sm">
             <tbody>
               <tr>
-                <td>Espaço 1</td>
-                <td>Espaço 2</td>
-                <td>Espaço 3</td>
-                <td>Espaço 4</td>
-                <td>Espaço 5</td>
-                <td>Espaço 6</td>
+                {filaProntoSuspenso.map((data, index) => {
+                  return (
+                    <td key={index}>
+                      <a
+                        onClick={() => {
+                          setSelectedId(data.processId);
+                          setModalShow(true);
+                        }}
+                      >
+                        {data != undefined
+                          ? data.processId == -1
+                            ? "Vazio"
+                            : data.processId
+                          : "Vazio"}
+                      </a>
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </Table>
@@ -895,7 +993,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
                           setModalShow(true);
                         }}
                       >
-                        {data.processId}
+                        {data != undefined
+                          ? data.processId == -1
+                            ? "Vazio"
+                            : data.processId
+                          : "Vazio"}
                       </a>
                     </td>
                   );
@@ -942,16 +1044,22 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           <Table striped bordered hover size="sm">
             <tbody>
               <tr>
-                {filaBloqueadosSuspensoGlobal.map((data) => {
+                {filaBloqueadoSuspenso.map((data) => {
                   return (
-                    <td>
+                    <td className={
+                      data.descontadoTempoDisco ? "letraLaranja" : ""
+                    }>
                       <a
                         onClick={() => {
                           setSelectedId(data.processId);
                           setModalShow(true);
                         }}
                       >
-                        {data.processId}
+                        {data != undefined
+                          ? data.processId == -1
+                            ? "Vazio"
+                            : data.processId
+                          : "Vazio"}
                       </a>
                     </td>
                   );
@@ -974,7 +1082,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
                           setModalShow(true);
                         }}
                       >
-                        {data.processId}
+                        {data != undefined
+                          ? data.processId == -1
+                            ? "Vazio"
+                            : data.processId
+                          : "Vazio"}
                       </a>
                     </td>
                   );
@@ -993,7 +1105,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
                           setModalShow(true);
                         }}
                       >
-                        {data.processId}
+                        {data != undefined
+                          ? data.processId == -1
+                            ? "Vazio"
+                            : data.processId
+                          : "Vazio"}
                       </a>
                     </td>
                   );
@@ -1012,7 +1128,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
                           setModalShow(true);
                         }}
                       >
-                        {data.processId}
+                        {data != undefined
+                          ? data.processId == -1
+                            ? "Vazio"
+                            : data.processId
+                          : "Vazio"}
                       </a>
                     </td>
                   );
@@ -1043,7 +1163,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
                             setModalShow(true);
                           }}
                         >
-                          {data.processId}
+                          {data != undefined
+                            ? data.processId == -1
+                              ? "Vazio"
+                              : data.processId
+                            : "Vazio"}
                         </a>
                       </td>
                     );

@@ -192,9 +192,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     let paraRetirarDaFilaDeBloqueados = [];
     for (let i = filaBloqueadosGlobal.length - 1; i >= 0; i--) {
       somaProcessos += parseInt(filaBloqueadosGlobal[i].mbytes);
-      if (somaProcessos >= parseInt(process.mbytes)) {
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
         conseguiAlocar = true;
-        for (let j = i + 1; j < filaBloqueadosGlobal.length; j++) {
+        for (let j = i; j < filaBloqueadosGlobal.length; j++) {
           tamanhoDiscoVariavel += parseInt(filaBloqueadosGlobal[j].mbytes);
           bloqueadosParaBloqueadosSuspenso.push(filaBloqueadosGlobal[j]);
           paraRetirarDaFilaDeBloqueados.push(filaBloqueadosGlobal[j]);
@@ -236,9 +236,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
 
     for (let i = filaFeedback3Global.length - 1; i >= 0; i--) {
       somaProcessos += parseInt(filaFeedback3Global[i].mbytes);
-      if (somaProcessos >= parseInt(process.mbytes)) {
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
         conseguiAlocar = true;
-        for (let j = i + 1; j < filaFeedback3Global.length; j++) {
+        for (let j = i; j < filaFeedback3Global.length; j++) {
           tamanhoDiscoVariavel += parseInt(filaFeedback3Global[j].mbytes);
           feedback3ParaBloqueadosSuspenso.push(filaFeedback3Global[j]);
           paraRetirarDaFilaDeFeedback3.push(filaFeedback3Global[j]);
@@ -291,9 +291,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
 
     for (let i = filaFeedback2Global.length - 1; i >= 0; i--) {
       somaProcessos += parseInt(filaFeedback2Global[i].mbytes);
-      if (somaProcessos >= parseInt(process.mbytes)) {
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
         conseguiAlocar = true;
-        for (let j = i + 1; j < filaFeedback2Global.length; j++) {
+        for (let j = i; j < filaFeedback2Global.length; j++) {
           tamanhoDiscoVariavel += parseInt(filaFeedback2Global[j].mbytes);
           feedback2ParaBloqueadosSuspenso.push(filaFeedback2Global[j]);
           paraRetirarDaFilaDeFeedback2.push(filaFeedback2Global[j]);
@@ -357,9 +357,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
 
     for (let i = filaFeedback1Global.length - 1; i >= 0; i--) {
       somaProcessos += parseInt(filaFeedback1Global[i].mbytes);
-      if (somaProcessos >= parseInt(process.mbytes)) {
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
         conseguiAlocar = true;
-        for (let j = i + 1; j < filaFeedback1Global.length; j++) {
+        for (let j = i; j < filaFeedback1Global.length; j++) {
           tamanhoDiscoVariavel += parseInt(filaFeedback1Global[j].mbytes);
           feedback1ParaBloqueadosSuspenso.push(filaFeedback1Global[j]);
           paraRetirarDaFilaDeFeedback1.push(filaFeedback1Global[j]);

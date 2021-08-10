@@ -477,7 +477,168 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     }
   }
 
-  function TentarAlocarProcessoPriodade1() { }
+  function TentarAlocarProcessoPriodade1() {
+    let conseguiAlocar = false;
+    let somaProcessos = 0;
+    let bloqueadosParaBloqueadosSuspenso = [];
+    let paraRetirarDaFilaDeBloqueados = [];
+    for (let i = filaBloqueadosGlobal.length - 1; i >= 0; i--) {
+      somaProcessos += parseInt(filaBloqueadosGlobal[i].mbytes);
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
+        conseguiAlocar = true;
+        for (let j = i; j < filaBloqueadosGlobal.length; j++) {
+          tamanhoDiscoVariavel += parseInt(filaBloqueadosGlobal[j].mbytes);
+          bloqueadosParaBloqueadosSuspenso.push(filaBloqueadosGlobal[j]);
+          paraRetirarDaFilaDeBloqueados.push(filaBloqueadosGlobal[j]);
+        }
+      }
+    }
+    if (conseguiAlocar) {
+      tamanhoDiscoVariavel -= parseInt(process.mbytes);
+      PtempoRealGlobal.push(process);
+      for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
+        filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
+      }
+      for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
+        filaBloqueadosGlobal = filaBloqueadosGlobal.filter(
+          (x) => x != paraRetirarDaFilaDeBloqueados[i]
+        );
+      }
+      return;
+    } else {
+      bloqueadosParaBloqueadosSuspenso = filaBloqueadosGlobal;
+      paraRetirarDaFilaDeBloqueados = filaBloqueadosGlobal;
+      tentarAlocarProcessoPrioridade1EmFeedback3(
+        process,
+        somaProcessos,
+        bloqueadosParaBloqueadosSuspenso,
+        paraRetirarDaFilaDeBloqueados
+      );
+    }
+   }
+
+   function tentarAlocarProcessoPrioridade1EmFeedback3(
+    process,
+    somaProcessos,
+    bloqueadosParaBloqueadosSuspenso,
+    paraRetirarDaFilaDeBloqueados
+  ) {
+    let conseguiAlocar = false;
+    let feedback3ParaProntoSuspenso = [];
+    let paraRetirarDaFilaDeFeedback3 = [];
+
+    for (let i = filaFeedback3Global.length - 1; i >= 0; i--) {
+      somaProcessos += parseInt(filaFeedback3Global[i].mbytes);
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
+        conseguiAlocar = true;
+        for (let j = i; j < filaFeedback3Global.length; j++) {
+          tamanhoDiscoVariavel += parseInt(filaFeedback3Global[j].mbytes);
+          feedback3ParaProntoSuspenso.push(filaFeedback3Global[j]);
+          paraRetirarDaFilaDeFeedback3.push(filaFeedback3Global[j]);
+        }
+      }
+    }
+
+    if (conseguiAlocar) {
+      tamanhoDiscoVariavel -= parseInt(process.mbytes);
+      PtempoRealGlobal.push(process);
+      for (let i = 0; i < feedback3ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback3ParaProntoSuspenso[i]);
+      }
+      for (let i = 0; i < paraRetirarDaFilaDeFeedback3.length; i++) {
+        filaFeedback3Global = filaFeedback3Global.filter(
+          (x) => x != paraRetirarDaFilaDeFeedback3[i]
+        );
+      }
+      for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
+        filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
+      }
+      for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
+        filaBloqueadosGlobal = filaBloqueadosGlobal.filter(
+          (x) => x != paraRetirarDaFilaDeBloqueados[i]
+        );
+      }
+    } else {
+      feedback3ParaProntoSuspenso = filaFeedback3Global
+      paraRetirarDaFilaDeFeedback3 = filaFeedback3Global
+      tentarAlocarProcessoPrioridade1EmFeedback2(
+        process,
+        somaProcessos,
+        bloqueadosParaBloqueadosSuspenso,
+        paraRetirarDaFilaDeBloqueados,
+        feedback3ParaProntoSuspenso,
+        paraRetirarDaFilaDeFeedback3
+      );
+    }
+  }
+
+  function tentarAlocarProcessoPrioridade1EmFeedback2(
+    process,
+    somaProcessos,
+    bloqueadosParaBloqueadosSuspenso,
+    paraRetirarDaFilaDeBloqueados,
+    feedback3ParaProntoSuspenso,
+    paraRetirarDaFilaDeFeedback3
+  ) {
+    let conseguiAlocar = false;
+    let feedback2ParaProntoSuspenso = [];
+    let paraRetirarDaFilaDeFeedback2 = [];
+
+    for (let i = filaFeedback2Global.length - 1; i >= 0; i--) {
+      somaProcessos += parseInt(filaFeedback2Global[i].mbytes);
+      if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
+        conseguiAlocar = true;
+        for (let j = i; j < filaFeedback2Global.length; j++) {
+          tamanhoDiscoVariavel += parseInt(filaFeedback2Global[j].mbytes);
+          feedback2ParaProntoSuspenso.push(filaFeedback2Global[j]);
+          paraRetirarDaFilaDeFeedback2.push(filaFeedback2Global[j]);
+        }
+      }
+    }
+
+    if (conseguiAlocar) {
+      tamanhoDiscoVariavel -= parseInt(process.mbytes);
+      PtempoRealGlobal.push(process);
+      for (let i = 0; i < feedback2ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback2ParaProntoSuspenso[i]);
+      }
+      for (let i = 0; i < paraRetirarDaFilaDeFeedback2.length; i++) {
+        filaFeedback2Global = filaFeedback2Global.filter(
+          (x) => x != paraRetirarDaFilaDeFeedback2[i]
+        );
+      }
+      for (let i = 0; i < feedback3ParaProntoSuspenso.length; i++) {
+        filaProntoSuspensoGlobal.push(feedback3ParaProntoSuspenso[i]);
+      }
+      for (let i = 0; i < paraRetirarDaFilaDeFeedback3.length; i++) {
+        filaFeedback3Global = filaFeedback3Global.filter(
+          (x) => x != paraRetirarDaFilaDeFeedback3[i]
+        );
+      }
+      for (let i = 0; i < bloqueadosParaBloqueadosSuspenso.length; i++) {
+        if(bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco){
+          bloqueadosParaBloqueadosSuspenso[i].descontadoTempoDisco = false
+          discosGlobal = discosGlobal + parseInt(bloqueadosParaBloqueadosSuspenso[i].disco)
+        }
+        filaBloqueadosSuspensoGlobal.push(bloqueadosParaBloqueadosSuspenso[i]);
+      }
+      for (let i = 0; i < paraRetirarDaFilaDeBloqueados.length; i++) {
+        filaBloqueadosGlobal = filaBloqueadosGlobal.filter(
+          (x) => x != paraRetirarDaFilaDeBloqueados[i]
+        );
+      }
+    }  else {
+      filaProntoSuspensoGlobal.push(process);
+    }
+  }
 
   function RegistrarHistorico() {
     for (let i = 0; i < PtempoRealGlobal.length; i++) {

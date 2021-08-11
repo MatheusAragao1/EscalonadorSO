@@ -160,6 +160,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     //Passar os processos que estao em bloqueado suspenso e receberam disco para pronto suspenso
     PassarBloqueadoSuspensoParaProntoSuspenso();
 
+    //
+    PassarDeFeedbackParaFeedbackComPrioridadeMaiorSeBaterOTempo();
+
     //Registra o historico dos processos
     RegistrarHistorico();
 
@@ -172,6 +175,50 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     setFilaProntoSuspenso(filaProntoSuspensoGlobal);
     setCpus(filaCPUGlobal);
   }, [count]);
+
+  function PassarDeFeedbackParaFeedbackComPrioridadeMaiorSeBaterOTempo(){
+    let paraRetirarDeFeedback3 = []
+    let paraRetirarDeFeedback2 = []
+    let paraAdicionarEmFeedback2 = []
+    let paraAdicionarEmFeedback1 = []
+
+    for(let i = 0; i < filaFeedback3Global.length; i++){
+      filaFeedback3Global[i].tempoNaFilaFeedback = parseInt(filaFeedback3Global[i].tempoNaFilaFeedback) + 1
+      if(filaFeedback3Global[i].tempoNaFilaFeedback >= 10){
+        paraRetirarDeFeedback3.push(filaFeedback3Global[i])
+        filaFeedback3Global[i].tempoNaFilaFeedback = 0
+        filaFeedback3Global[i].priority = 2
+        paraAdicionarEmFeedback2.push(filaFeedback3Global[i])
+      }
+    }
+
+    for(let i = 0; i < filaFeedback2Global.length; i++){
+      filaFeedback2Global[i].tempoNaFilaFeedback = parseInt(filaFeedback2Global[i].tempoNaFilaFeedback) + 1
+      if(filaFeedback2Global[i].tempoNaFilaFeedback >= 10){
+        paraRetirarDeFeedback2.push(filaFeedback2Global[i])
+        filaFeedback2Global[i].tempoNaFilaFeedback = 0
+        filaFeedback2Global[i].priority = 1
+        paraAdicionarEmFeedback1.push(filaFeedback2Global[i])
+      }
+    }
+
+    for (let i = 0; i < paraRetirarDeFeedback3.length; i++) {
+      filaFeedback3Global = filaFeedback3Global.filter(x => x != paraRetirarDeFeedback3[i]);
+    }
+
+    for (let i = 0; i < paraRetirarDeFeedback2.length; i++) {
+      filaFeedback2Global = filaFeedback2Global.filter(x => x != paraRetirarDeFeedback2[i]);
+    }
+
+    for (let i = 0; i < paraAdicionarEmFeedback2.length; i++) {
+      filaFeedback2Global.push(paraAdicionarEmFeedback2[i]);
+    }
+
+    for (let i = 0; i < paraAdicionarEmFeedback1.length; i++) {
+      filaFeedback1Global.push(paraAdicionarEmFeedback1[i]);
+    }
+
+  }
 
   function PassarProcessoParaFilaDePronto() {
     let paraRetirarProntoSuspenso = []

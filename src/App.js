@@ -43,6 +43,7 @@ function App() {
           tempoDeQuantumGasto: 0,
           tempoNaFilaBloqueado: 0,
           descontadoTempoDisco: false,
+          tempoNaFilaFeedback: 0,
         })
 
       }

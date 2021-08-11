@@ -14,14 +14,15 @@ let filaBloqueadosSuspensoGlobal = [];
 let filaProntoSuspensoGlobal = [];
 
 let filaCPUGlobal = [
-  { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
-  { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
-  { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
+  { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaFeedback: 0 },
+  { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaFeedback: 0 },
+  { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaFeedback: 0 },
   {
     processId: -1,
     processorTime: 0,
     tempoDeQuantumGasto: 0,
     tempoNaFilaBloqueado: 0,
+    tempoNaFilaFeedback: 0,
   },
 ];
 
@@ -70,14 +71,15 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
   const [filaBloqueadoSuspenso, setFilaBloqueadoSuspenso] = useState([]);
   const [filaProntoSuspenso, setFilaProntoSuspenso] = useState([]);
   const [cpus, setCpus] = useState([
-    { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
-    { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
-    { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0 },
+    { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaFeedback: 0 },
+    { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaFeedback: 0 },
+    { processId: -1, processorTime: 0, tempoDeQuantumGasto: 0, tempoNaFilaFeedback: 0 },
     {
       processId: -1,
       processorTime: 0,
       tempoDeQuantumGasto: 0,
       tempoNaFilaBloqueado: 0,
+      tempoNaFilaFeedback: 0,
     },
   ]);
 
@@ -186,7 +188,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       filaFeedback3Global[i].tempoNaFilaFeedback = parseInt(filaFeedback3Global[i].tempoNaFilaFeedback) + 1
       if(filaFeedback3Global[i].tempoNaFilaFeedback >= 10){
         paraRetirarDeFeedback3.push(filaFeedback3Global[i])
-        filaFeedback3Global[i].tempoNaFilaFeedback = 0
+        if(filaFeedback3Global[i] != undefined){
+          filaFeedback3Global[i].tempoNaFilaFeedback = 0;
+        }
         filaFeedback3Global[i].priority = 2
         paraAdicionarEmFeedback2.push(filaFeedback3Global[i])
       }
@@ -196,7 +200,9 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
       filaFeedback2Global[i].tempoNaFilaFeedback = parseInt(filaFeedback2Global[i].tempoNaFilaFeedback) + 1
       if(filaFeedback2Global[i].tempoNaFilaFeedback >= 10){
         paraRetirarDeFeedback2.push(filaFeedback2Global[i])
-        filaFeedback2Global[i].tempoNaFilaFeedback = 0
+        if(filaFeedback2Global[i] != undefined){
+          filaFeedback2Global[i].tempoNaFilaFeedback = 0;
+        }
         filaFeedback2Global[i].priority = 1
         paraAdicionarEmFeedback1.push(filaFeedback2Global[i])
       }
@@ -844,6 +850,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           processId: -1,
           processorTime: 0,
           tempoDeQuantumGasto: 0,
+          tempoNaFilaFeedback: 0,
         };
       }
     }
@@ -861,8 +868,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     let index3 = 0;
     for (var i = 0; i < 4; i++) {
       if (filaCPUGlobal[i].processId == -1 && filaFeedback2Global.length > 0) {
-        filaCPUGlobal[i] = filaFeedback2Global[index3];
         toRemoveFromFeedback2.push(filaFeedback2Global[index3]);
+        if(filaFeedback2Global[index3] != undefined){
+          filaFeedback2Global[index3].tempoNaFilaFeedback = 0;
+        }
+        filaCPUGlobal[i] = filaFeedback2Global[index3];
         index3++;
       } else if (
         PtempoRealGlobal.length > 0 &&
@@ -884,8 +894,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           } else if (processosNaCPUOrdenadosPorPrioridade[0].priority == 3) {
             filaFeedback3Global.push(processosNaCPUOrdenadosPorPrioridade[0]);
           }
-          filaCPUGlobal[i] = filaFeedback2Global[index3];
           toRemoveFromFeedback2.push(filaFeedback2Global[index3]);
+          if(filaFeedback2Global[index3] != undefined){
+            filaFeedback2Global[index3].tempoNaFilaFeedback = 0
+          }
+          filaCPUGlobal[i] = filaFeedback2Global[index3];
           index3++;
         }
       }
@@ -894,6 +907,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           processId: -1,
           processorTime: 0,
           tempoDeQuantumGasto: 0,
+          tempoNaFilaFeedback: 0,
         };
       }
     }
@@ -911,9 +925,12 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     let toRemoveFromFeedback3 = [];
     let index4 = 0;
     for (var i = 0; i < 4; i++) {
-      if (filaCPUGlobal[i].processId == -1 && filaFeedback3Global.length > 0) {
-        filaCPUGlobal[i] = filaFeedback3Global[index4];
+      if (filaCPUGlobal[i].processId == -1 && filaFeedback3Global.length > 0) {     
         toRemoveFromFeedback3.push(filaFeedback3Global[index4]);
+        if(filaFeedback3Global[index4] != undefined){
+          filaFeedback3Global[index4].tempoNaFilaFeedback = 0;
+        }
+        filaCPUGlobal[i] = filaFeedback3Global[index4];
         index4++;
       } else if (
         PtempoRealGlobal.length > 0 &&
@@ -935,8 +952,11 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           } else if (processosNaCPUOrdenadosPorPrioridade[0].priority == 3) {
             filaFeedback3Global.push(processosNaCPUOrdenadosPorPrioridade[0]);
           }
-          filaCPUGlobal[i] = filaFeedback1Global[index4];
-          toRemoveFromFeedback3.push(filaFeedback1Global[index4]);
+          toRemoveFromFeedback3.push(filaFeedback3Global[index4]);
+          if(filaFeedback3Global[index4] != undefined){
+            filaFeedback3Global[index4].tempoNaFilaFeedback = 0;
+          }
+          filaCPUGlobal[i] = filaFeedback3Global[index4];
           index4++;
         }
       }
@@ -945,6 +965,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           processId: -1,
           processorTime: 0,
           tempoDeQuantumGasto: 0,
+          tempoNaFilaFeedback: 0,
         };
       }
     }
@@ -966,6 +987,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         }
       }
@@ -988,6 +1010,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         } else if (
           filaCPUGlobal[i].tempoDeQuantumGasto >= valorDoQuantum &&
@@ -1000,6 +1023,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         }
       }
@@ -1015,6 +1039,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         } else if (
           filaCPUGlobal[i].tempoDeQuantumGasto >= valorDoQuantum * 2 &&
@@ -1027,6 +1052,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         }
       } else if (filaCPUGlobal[i].disco > 0) {
@@ -1035,6 +1061,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           processId: -1,
           processorTime: 0,
           tempoDeQuantumGasto: 0,
+          tempoNaFilaFeedback: 0,
         };
       }
     }
@@ -1049,6 +1076,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         } else if (
           filaCPUGlobal[i].tempoDeQuantumGasto >= valorDoQuantum * 3 &&
@@ -1060,6 +1088,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             processId: -1,
             processorTime: 0,
             tempoDeQuantumGasto: 0,
+            tempoNaFilaFeedback: 0,
           };
         }
       } else if (filaCPUGlobal[i].disco > 0) {
@@ -1068,6 +1097,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           processId: -1,
           processorTime: 0,
           tempoDeQuantumGasto: 0,
+          tempoNaFilaFeedback: 0,
         };
       }
     }
@@ -1115,6 +1145,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
           processId: -1,
           processorTime: 0,
           tempoDeQuantumGasto: 0,
+          tempoNaFilaFeedback: 0,
         };
       }
     }

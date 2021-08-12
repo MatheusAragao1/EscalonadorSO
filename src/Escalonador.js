@@ -121,7 +121,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
             });
           }
         } else {
-          TentarAlocarProcessoPriodade1();
+          TentarAlocarProcessoPriodade1(process);
         }
       }
     });
@@ -162,11 +162,15 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     //Passar os processos que estao em bloqueado suspenso e receberam disco para pronto suspenso
     PassarBloqueadoSuspensoParaProntoSuspenso();
 
-    //
+    //Se um processo ficar mais de 10 momentos na fila de feedback 3 ou 2 ele passa pra fila de prioridade com prioridade superior
     PassarDeFeedbackParaFeedbackComPrioridadeMaiorSeBaterOTempo();
 
     //Registra o historico dos processos
     RegistrarHistorico();
+
+    if(tamanhoDiscoVariavel > tamanhoDiscoLimite){
+      tamanhoDiscoVariavel = tamanhoDiscoLimite
+    }
 
     setPTempoReal(PtempoRealGlobal);
     setFilaFeedback1(filaFeedback1Global);
@@ -230,9 +234,10 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     let paraRetirarProntoSuspenso = []
     for (let i = 0; i < filaProntoSuspensoGlobal.length; i++) {
       if (
-        tamanhoDiscoVariavel + parseInt(filaProntoSuspensoGlobal[i].mbytes) <=
-        tamanhoDiscoLimite
+        parseInt(filaProntoSuspensoGlobal[i].mbytes) <=
+        tamanhoDiscoVariavel
       ) {
+
         if (filaProntoSuspensoGlobal[i].priority === 1) {
           filaFeedback1Global.push(filaProntoSuspensoGlobal[i]);
           paraRetirarProntoSuspenso.push(filaProntoSuspensoGlobal[i])
@@ -254,7 +259,6 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
   }
 
   function PassarBloqueadoSuspensoParaProntoSuspenso() {
-    console.log(count + ' - ' + filaBloqueadosGlobal.length + ' - ' + discosGlobal)
     if (filaBloqueadosGlobal.length == 0) {
       let toRemoveFromBloqueadosSuspenso = [];
       for (var i = 0; i < filaBloqueadosSuspensoGlobal.length; i++) {
@@ -530,13 +534,14 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
     }
   }
 
-  function TentarAlocarProcessoPriodade1() {
+  function TentarAlocarProcessoPriodade1(process) {
     let conseguiAlocar = false;
     let somaProcessos = 0;
     let bloqueadosParaBloqueadosSuspenso = [];
     let paraRetirarDaFilaDeBloqueados = [];
     for (let i = filaBloqueadosGlobal.length - 1; i >= 0; i--) {
       somaProcessos += parseInt(filaBloqueadosGlobal[i].mbytes);
+      console.log(somaProcessos)
       if (somaProcessos >= parseInt(process.mbytes) && !conseguiAlocar) {
         conseguiAlocar = true;
         for (let j = i; j < filaBloqueadosGlobal.length; j++) {
@@ -689,6 +694,7 @@ function Escalonador({ listOfProcess, valorDoQuantum }) {
         );
       }
     }  else {
+      console.log(process)
       filaProntoSuspensoGlobal.push(process);
     }
   }
